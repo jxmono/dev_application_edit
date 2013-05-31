@@ -1,3 +1,4 @@
+var fs = require("fs");
 exports.initialize = function (link) {
 
     var mongoId = link.data;
@@ -20,11 +21,37 @@ exports.initialize = function (link) {
 
                     if (err) { return link.send(400, err); }
                     if (!doc) { return link.send(400, "Invalid mongo id."); }
-                    link.send(200, JSON.stringify(link.session, null, 4));
+                    
+                    // The logged user musts to have permissions to edit the application
+                    // TODO Implement collaborator mode
+                    if (doc.ownerUserName !== link.session.login) {
+                        err = "You must have permissions to edit this files. You are logged as " + 
+                              link.session.login + " instead of " + doc.owner;
+                        return link.send(400, err);
+                    }
 
+                    ////////////////////
+                    // Clone application
+                    ////////////////////
+                    var dirName = M.config.APPLICATION_ROOT + "00000000000000000000000000000002/edit/"+ link.session.login;
 
+                    var json = doc.descriptor;
+                    try { json = JSON.parse(json);
+                    } catch (e) {
+                        return link.send(400, "Invalid application descriptor.");
+                    }
+                
+                    function clone() {
+                        M.repo.cloneToDir(doc.repo_url, dirName, json.appId, { depth: 5 }, function (err) {
+                            if (err) { return link.send(400, err); }
+                            link.send(200, "Successfully cloned application in the following directory: " + dirName + "/" + json.appId);
+                        });
+                    }
 
-                    callback(null, docs[0]);
+                    fs.mkdir(dirName, function(e){
+                        if (e) { link.send(200, "Already cloned this app."); }
+                        clone();
+                    });
                 });
             });
         });
