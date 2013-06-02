@@ -48,7 +48,7 @@ exports.initialize = function (link) {
                         });
                     }
 
-                    fs.mkdir(dirName, function(e){
+                    M.fs.makeDirectory(dirName, function(e){
                         if (e) { link.send(200, "Already cloned this app."); }
                         clone();
                     });

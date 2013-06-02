@@ -7,7 +7,7 @@ module.exports = function (config) {
     var mongoId = search.substring(9);
     
     initialize(self, mongoId, function (err, data) {
-        $(".result").text(data);            
+        $(".result").text(err || data);            
         stopLoading();
     });
 };
