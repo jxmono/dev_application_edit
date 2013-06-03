@@ -14,6 +14,7 @@ var loading = {
 var EDIT_DIRECTORY;
 var EDIT_PATH;
 var APP_ID;
+var FILE_NAME;
 
 var MODES = {
     "js": "ace/mode/javascript",
@@ -82,12 +83,12 @@ function handlers(self) {
         $(".appItem").removeClass("active");
         $(this).addClass("active");
         
-        var fileName = $(this).attr("data-file");
+        FILE_NAME = $(this).attr("data-file");
 
-        self.link(EDIT_PATH + "/" + APP_ID + fileName, function (err, data) {
+        self.link(EDIT_PATH + "/" + APP_ID + FILE_NAME, function (err, data) {
             if (err) { return alert(err); }
 
-            var extension = fileName.substring(fileName.lastIndexOf(".") + 1);
+            var extension = FILE_NAME.substring(FILE_NAME.lastIndexOf(".") + 1);
             editor.getSession().setMode(MODES[extension]);
             editor.setValue(data);
             editor.gotoLine(1, 1, false);
@@ -98,7 +99,16 @@ function handlers(self) {
     });
 
     $(document).on("click", ".btn-danger", function () {
-        self.link("saveFile", { data: editor.getValue() }, function (err) {
+        
+        var dataToSend = {
+            editDir: EDIT_DIRECTORY,
+            editPath: EDIT_PATH,
+            appId: APP_ID,
+            fileName: FILE_NAME,
+            content: editor.getValue()
+        };
+
+        self.link("saveFile", { data: dataToSend }, function (err) {
             if (err) { return alert(err); }
         });
     });

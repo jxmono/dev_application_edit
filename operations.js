@@ -40,8 +40,9 @@ exports.cloneApplication = function (link) {
                     // Clone application
                     ////////////////////
                     var path = "/editApplications/"+ link.session.login;
-                    var dirName = M.config.APPLICATION_ROOT + "00000000000000000000000000000002" + path;
+                    var dirName = M.config.APPLICATION_ROOT + "00000000000000000000000000000002/public" + path;
                     var json = doc.descriptor;
+
                     try { json = JSON.parse(json);
                     } catch (e) {
                         return link.send(400, { "message": "Invalid application descriptor."});
@@ -108,12 +109,24 @@ exports.initialize = function (link) {
  *  Save file
  */
 exports.saveFile = function (link) {
-    
-    if (!link.data) { return link.send(400, "Missing data."); }
+   
+    // TODO Only we really need...
+    if (!link.data || !link.data.editDir || !link.data.editPath || !link.data.appId || !link.data.content || !link.data.fileName) { 
+        return link.send(400, "Missing data."); 
+    }
 
+    var path = "/editApplications/"+ link.session.login;
     console.log(link.data);
 
-    link.send(200);
+
+    var filePath = link.data.editDir + link.data.fileName;
+
+    console.log(filePath);
+
+    fs.write(filePath, link.data.content, function (err) {
+        if (err) { return link.send(400, err); }
+        link.send(200);
+    });
 };
 
 exports.openFile = function (link) {
