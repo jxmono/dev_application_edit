@@ -99,7 +99,7 @@ function handlers(self) {
 
             var extension = FILE_NAME.substring(FILE_NAME.lastIndexOf(".") + 1);
             editor.getSession().setMode(MODES[extension] || "ace/mode/" + extension);
-            editor.setValue(data);
+            editor.setValue(content);
             editor.gotoLine(1, 0, false);
             editor.focus();
         });

@@ -39,8 +39,8 @@ exports.cloneApplication = function (link) {
                     ////////////////////
                     // Clone application
                     ////////////////////
-                    var path = "/editApplications/"+ link.session.login;
-                    var dirName = M.config.APPLICATION_ROOT + "00000000000000000000000000000002/public" + path;
+                    var path = "/edit/"+ link.session.login;
+                    var dirName = M.config.APPLICATION_ROOT + "00000000000000000000000000000002/" + path;
                     var json = doc.descriptor;
 
                     try { json = JSON.parse(json);
@@ -85,7 +85,6 @@ exports.cloneApplication = function (link) {
  */
 exports.initialize = function (link) {
 
-    console.log(link.data);
     if (!link.data || !link.data.editDir) { return link.send(400, "Missing data."); }
 
     var editDir = link.data.editDir;
@@ -130,7 +129,7 @@ exports.openFile = function (link) {
         return link.send(400, "Missing data.");
     }
 
-    var fileToEdit = M.APPLICATION_ROOT + "00000000000000000000000000000002/edit/" + link.session.login + "/" + link.data.appId + link.data.fileName;
+    var fileToEdit = M.config.APPLICATION_ROOT + "00000000000000000000000000000002/edit/" + link.session.login + "/" + link.data.appId + link.data.fileName;
 
     fs.readFile(fileToEdit, function (err, data) {
         if (err) { return link.send(400, err); }
