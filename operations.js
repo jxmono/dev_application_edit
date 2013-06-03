@@ -1,4 +1,5 @@
 var fs = require("fs");
+var Dir = require("./directory");
 
 /* 
  *  Operation that clones the application
@@ -46,10 +47,13 @@ exports.cloneApplication = function (link) {
                         return link.send(400, "Invalid application descriptor.");
                     }
                 
+                    var editDir = dirName + "/" + json.appId;
+                
                     function clone() {
                         M.repo.cloneToDir(doc.repo_url, dirName, json.appId, { depth: 5 }, function (err) {
-                            if (err && err.code === "API_REPO_CLONE_DESTINATION_ALREADY_EXISTS") { return link.send(200, "Already cloned this app. Preparing to edit <strong>" + doc.name + "</strong>"); }
-                            link.send(200, "Successfully cloned <strong>" + doc.name + "</strong>.");
+                            if (err && err.code === "API_REPO_CLONE_DESTINATION_ALREADY_EXISTS") { return link.send(200, { "message": "Already cloned this app. Preparing to edit <strong>" + doc.name + "</strong>", "editDir": editDir }); }
+                            
+                            link.send(200, { "message": "Successfully cloned <strong>" + doc.name + "</strong>.", "editDir": editDir });
                         });
                     }
 
@@ -67,7 +71,26 @@ exports.cloneApplication = function (link) {
  *  in the edit directory
  */
 exports.initialize = function (link) {
-    link.send(200);
+
+    console.log(link.data);
+    if (!link.data || !link.data.editDir) { return link.send(400, "Missing data."); }
+
+    var editDir = link.data.editDir;
+
+    Dir.read(editDir, function (err, files) {
+        if (err) { return link.send(400, err); }
+
+        var filesToSend = [];
+
+        for (var i in files) {
+            if (files[i].indexOf("/.git/") === -1) {
+                filesToSend.push(files[i].replace(editDir, ""));
+            }
+        }
+
+        console.log("SENDING::: ", filesToSend);
+        link.send(200, filesToSend);
+    });
 };
 
 /*

@@ -21,27 +21,36 @@ module.exports = function (config) {
     var search = location.search;
     var mongoId = search.substring(9);
   
-    function processResponse (err, data, callback) {
+    function processResponse (err, callback) {
         if (err) {alert(err); return location = "/"; }
         callback();
     }
 
     // clone application
     self.link("cloneApplication", { data: mongoId }, function (err, data) {
-       processResponse(err, data, function () { 
-            loading.start(data);
+       processResponse(err, function () { 
+            loading.start(data.message);
 
             // application cloned successfully, initialize it.
-            self.link("initialize", function (err, data) {
-                processResponse(err, data, function () {
-                    loading.start(data);
+            self.link("initialize", { data: { editDir: data.editDir } }, function (err, files) {
+                processResponse(err, function () {
+                    createFilesList(files); 
+                    loading.stop();
                 });
             });
         });
     });
 };
 
-function initialize (self, mongoId, callback) {
-    // initialize
-    self.link("cloneApplication", { data: mongoId }, callback);
+function createFilesList(files) {
+    var template = $(".files-container").find(".template");
+
+    for (var i in files) {
+        
+        var item = template.clone().removeClass("template");
+        item.attr("data-file", files[i]);
+        item.find("a").text(files[i]);
+
+        $(".template").after(item);
+    }
 }
