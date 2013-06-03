@@ -85,13 +85,22 @@ function handlers(self) {
         
         FILE_NAME = $(this).attr("data-file");
 
-        self.link(EDIT_PATH + "/" + APP_ID + FILE_NAME, function (err, data) {
+        var dataObject = {
+            appId: APP_ID,
+            fileName: FILE_NAME
+        };
+
+        self.link("openFile", { data: dataObject },  function (err, content) {
             if (err) { return alert(err); }
+    
+            if (typeof content === "object") {
+                content = JSON.stringify(content, null, 4);
+            }
 
             var extension = FILE_NAME.substring(FILE_NAME.lastIndexOf(".") + 1);
-            editor.getSession().setMode(MODES[extension]);
+            editor.getSession().setMode(MODES[extension] || "ace/mode/" + extension);
             editor.setValue(data);
-            editor.gotoLine(1, 1, false);
+            editor.gotoLine(1, 0, false);
             editor.focus();
         });
 
@@ -102,8 +111,6 @@ function handlers(self) {
         
         var dataToSend = {
             editDir: EDIT_DIRECTORY,
-            editPath: EDIT_PATH,
-            appId: APP_ID,
             fileName: FILE_NAME,
             content: editor.getValue()
         };

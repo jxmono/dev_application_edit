@@ -109,26 +109,31 @@ exports.initialize = function (link) {
  *  Save file
  */
 exports.saveFile = function (link) {
-   
-    // TODO Only we really need...
-    if (!link.data || !link.data.editDir || !link.data.editPath || !link.data.appId || !link.data.content || !link.data.fileName) { 
+    
+    var data = link.data;
+
+    if (!data || !data.editDir || !data.content || !data.fileName) { 
         return link.send(400, "Missing data."); 
     }
 
-    var path = "/editApplications/"+ link.session.login;
-    console.log(link.data);
-
-
     var filePath = link.data.editDir + link.data.fileName;
 
-    console.log(filePath);
-
-    fs.write(filePath, link.data.content, function (err) {
+    fs.writeFile(filePath, link.data.content, function (err) {
         if (err) { return link.send(400, err); }
         link.send(200);
     });
 };
 
 exports.openFile = function (link) {
-    link.send(200);
+
+    if (!link.data || !link.data.appId || !link.data.fileName) {
+        return link.send(400, "Missing data.");
+    }
+
+    var fileToEdit = M.APPLICATION_ROOT + "00000000000000000000000000000002/edit/" + link.session.login + "/" + link.data.appId + link.data.fileName;
+
+    fs.readFile(fileToEdit, function (err, data) {
+        if (err) { return link.send(400, err); }
+        link.send(200, data.toString());
+    });
 };
