@@ -11,6 +11,16 @@ var loading = {
     }
 };
 
+var EDIT_DIRECTORY;
+var EDIT_PATH;
+var APP_ID;
+
+var MODES = {
+    "js": "ace/mode/javascript",
+    "css": "ace/mode/css",
+    "html": "ace/mode/html"
+};
+
 module.exports = function (config) {
 
     var self = this;
@@ -31,10 +41,20 @@ module.exports = function (config) {
        processResponse(err, function () { 
             loading.start(data.message);
 
+            EDIT_DIRECTORY = data.editDir;
+            EDIT_PATH = data.path;
+            APP_ID = data.appId;
+
             // application cloned successfully, initialize it.
-            self.link("initialize", { data: { editDir: data.editDir } }, function (err, files) {
+            self.link("initialize", { data: { editDir: EDIT_DIRECTORY } }, function (err, files) {
                 processResponse(err, function () {
-                    createFilesList(files); 
+                    createFileList(files); 
+                    handlers(self);
+
+                    var editor = ace.edit("editor");
+                    editor.setTheme("ace/theme/monokai");
+                    editor.getSession().setMode("ace/mode/javascript");
+
                     loading.stop();
                 });
             });
@@ -42,15 +62,44 @@ module.exports = function (config) {
     });
 };
 
-function createFilesList(files) {
+function createFileList(files) {
     var template = $(".files-container").find(".template");
 
     for (var i in files) {
         
-        var item = template.clone().removeClass("template");
+        var item = template.clone().removeClass("template").addClass("appItem");
         item.attr("data-file", files[i]);
         item.find("a").text(files[i]);
 
         $(".template").after(item);
     }
+}
+
+function handlers(self) {
+    var editor = ace.edit("editor");
+
+    $(document).on("click", ".appItem", function () {
+        $(".appItem").removeClass("active");
+        $(this).addClass("active");
+        
+        var fileName = $(this).attr("data-file");
+
+        self.link(EDIT_PATH + "/" + APP_ID + fileName, function (err, data) {
+            if (err) { return alert(err); }
+
+            var extension = fileName.substring(fileName.lastIndexOf(".") + 1);
+            editor.getSession().setMode(MODES[extension]);
+            editor.setValue(data);
+            editor.gotoLine(1, 1, false);
+            editor.focus();
+        });
+
+        return false;
+    });
+
+    $(document).on("click", ".btn-danger", function () {
+        self.link("saveFile", { data: editor.getValue() }, function (err) {
+            if (err) { return alert(err); }
+        });
+    });
 }

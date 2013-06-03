@@ -39,21 +39,33 @@ exports.cloneApplication = function (link) {
                     ////////////////////
                     // Clone application
                     ////////////////////
-                    var dirName = M.config.APPLICATION_ROOT + "00000000000000000000000000000002/edit/"+ link.session.login;
-
+                    var path = "/editApplications/"+ link.session.login;
+                    var dirName = M.config.APPLICATION_ROOT + "00000000000000000000000000000002" + path;
                     var json = doc.descriptor;
                     try { json = JSON.parse(json);
                     } catch (e) {
-                        return link.send(400, "Invalid application descriptor.");
+                        return link.send(400, { "message": "Invalid application descriptor."});
                     }
                 
                     var editDir = dirName + "/" + json.appId;
-                
+                    var appId = json.appId;                    
+               
+                    var response = {
+                        message: "",
+                        editDir: editDir,
+                        path: path,
+                        appId: appId
+                    };
+
                     function clone() {
                         M.repo.cloneToDir(doc.repo_url, dirName, json.appId, { depth: 5 }, function (err) {
-                            if (err && err.code === "API_REPO_CLONE_DESTINATION_ALREADY_EXISTS") { return link.send(200, { "message": "Already cloned this app. Preparing to edit <strong>" + doc.name + "</strong>", "editDir": editDir }); }
-                            
-                            link.send(200, { "message": "Successfully cloned <strong>" + doc.name + "</strong>.", "editDir": editDir });
+                            if (err && err.code === "API_REPO_CLONE_DESTINATION_ALREADY_EXISTS") { 
+                                response.message = "Already cloned this app. Preparing to edit <strong>" + doc.name + "</strong>";
+                                return link.send(200, response);
+                            }
+
+                            response.message = "Successfully cloned <strong>" + doc.name + "</strong>.";
+                            link.send(200, response);
                         });
                     }
 
@@ -88,7 +100,6 @@ exports.initialize = function (link) {
             }
         }
 
-        console.log("SENDING::: ", filesToSend);
         link.send(200, filesToSend);
     });
 };
@@ -97,5 +108,14 @@ exports.initialize = function (link) {
  *  Save file
  */
 exports.saveFile = function (link) {
+    
+    if (!link.data) { return link.send(400, "Missing data."); }
+
+    console.log(link.data);
+
+    link.send(200);
+};
+
+exports.openFile = function (link) {
     link.send(200);
 };

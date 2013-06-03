@@ -12,6 +12,7 @@
     "operations": [
         { "file": "operations.js", "function": "cloneApplication" },
         { "file": "operations.js", "function": "initialize" },
+        { "file": "operations.js", "function": "openFile" },
         { "file": "operations.js", "function": "saveFile"   }
     ]
 }
