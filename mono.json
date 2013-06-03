@@ -9,6 +9,7 @@
         "http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"
     ],
     "operations": [
+        { "file": "operations.js", "function": "cloneApplication" },
         { "file": "operations.js", "function": "initialize" },
         { "file": "operations.js", "function": "saveFile"   }
     ]

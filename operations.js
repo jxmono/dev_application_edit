@@ -1,5 +1,10 @@
 var fs = require("fs");
-exports.initialize = function (link) {
+
+/* 
+ *  Operation that clones the application
+ *  The mongo id has to be passed in link.data
+ */
+exports.cloneApplication = function (link) {
 
     var mongoId = link.data;
 
@@ -43,13 +48,12 @@ exports.initialize = function (link) {
                 
                     function clone() {
                         M.repo.cloneToDir(doc.repo_url, dirName, json.appId, { depth: 5 }, function (err) {
-                            if (err) { return link.send(400, err); }
-                            link.send(200, "Successfully cloned application in the following directory: " + dirName + "/" + json.appId);
+                            if (err && err.code === "API_REPO_CLONE_DESTINATION_ALREADY_EXISTS") { return link.send(200, "Already cloned this app. Preparing to edit <strong>" + doc.name + "</strong>"); }
+                            link.send(200, "Successfully cloned <strong>" + doc.name + "</strong>.");
                         });
                     }
 
                     M.fs.makeDirectory(dirName, function(e){
-                        if (e) { link.send(200, "Already cloned this app."); }
                         clone();
                     });
                 });
@@ -58,6 +62,17 @@ exports.initialize = function (link) {
     });
 };
 
+/*
+ *  Initialize operation: after the application is cloned
+ *  in the edit directory
+ */
+exports.initialize = function (link) {
+    link.send(200);
+};
+
+/*
+ *  Save file
+ */
 exports.saveFile = function (link) {
     link.send(200);
 };
