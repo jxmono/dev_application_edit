@@ -7,12 +7,12 @@ var Dir = require("./directory");
  */
 exports.cloneApplication = function (link) {
 
-    var mongoId = link.data;
+    var givenId = link.data;
 
-    if (!mongoId) { link.send(400, "Missing mongo id."); }
+    if (!givenId) { link.send(400, "Missing mongo id."); }
     
     /////////////////////////////////
-    // Search in database for mongoId
+    // Search in database for givenId
     /////////////////////////////////
     M.datasource.resolve(link.params.ds, function(err, ds) {
         if (err) { return callback(err); }
@@ -23,10 +23,24 @@ exports.cloneApplication = function (link) {
             db.collection(ds.collection, function(err, collection) {
                 if (err) { return callback(err); }
 
-                collection.findOne({"_id":M.mongo.ObjectID(mongoId) }, function(err, doc) {
+                var objectId;
+                var filter;
+
+                try {
+                    objectId = M.mongo.ObjectID(givenId);
+                    filter = {"_id": objectId };
+                } catch (e) {}
+
+                // It's not an Mongo ID
+                if (!objectId) {
+                    // suposse that given id is an app Mono id
+                    filter = { "appId": givenId };
+                }
+
+                collection.findOne(filter, function(err, doc) {
 
                     if (err) { return link.send(400, err); }
-                    if (!doc) { return link.send(400, "Invalid mongo id."); }
+                    if (!doc) { return link.send(400, "Provided an invalid id. Please provide a Mongo id or an application id."); }
                     
                     // The logged user musts to have permissions to edit the application
                     // TODO Implement collaborator mode
@@ -59,7 +73,6 @@ exports.cloneApplication = function (link) {
                     };
 
                     var auth = link.session.auth;
-                    
                     auth.type = "oauth";
                     auth.secrets = require(M.config.APPLICATION_ROOT + "00000000000000000000000000000002/secrets.json")[link.session.provider];
 
