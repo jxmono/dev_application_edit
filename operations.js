@@ -58,8 +58,18 @@ exports.cloneApplication = function (link) {
                         appId: appId
                     };
 
+                    var auth = link.session.auth;
+                    
+                    auth.type = "oauth";
+                    auth.secrets = require(M.config.APPLICATION_ROOT + "00000000000000000000000000000002/secrets.json")[link.session.provider];
+
+                    var cloneOptions = {
+                        depth: 5,
+                        auth: auth
+                    };
+
                     M.fs.makeDirectory(dirName, function(e){
-                        M.repo.cloneToDir(doc.repo_url, dirName, json.appId, { depth: 5 }, function (err) {
+                        M.repo.cloneToDir(doc.repo_url, dirName, json.appId, cloneOptions, function (err) {
                             if (err && err.code === "API_REPO_CLONE_DESTINATION_ALREADY_EXISTS") { 
                                 response.message = "Already cloned this app. Preparing to edit <strong>" + doc.name + "</strong>";
                                 return link.send(200, response);
