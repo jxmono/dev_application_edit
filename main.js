@@ -1,3 +1,4 @@
+M.wrap('github/IonicaBizau/dev_application_edit/dev/main.js', function (require, module, exports) {
 var loading = {
     "start": function (message) {
         var loading = $(".loading");
@@ -16,12 +17,6 @@ var EDIT_PATH;
 var APP_ID;
 var FILE_NAME;
 
-var MODES = {
-    "js": "ace/mode/javascript",
-    "css": "ace/mode/css",
-    "html": "ace/mode/html"
-};
-
 module.exports = function (config) {
 
     var self = this;
@@ -31,7 +26,7 @@ module.exports = function (config) {
     // first, scan the url
     var search = location.search;
     var mongoId = search.substring(9);
-  
+
     function processResponse (err, callback) {
         if (err) {alert(err); return location = "/"; }
         callback();
@@ -39,24 +34,20 @@ module.exports = function (config) {
 
     // clone application
     self.link("cloneApplication", { data: mongoId }, function (err, data) {
-       processResponse(err, function () { 
+       processResponse(err, function () {
             loading.start(data.message);
 
             EDIT_DIRECTORY = data.editDir;
             EDIT_PATH = data.path;
             APP_ID = data.appId;
 
+            $("#project-root").text(data.doc.name);
+
             // application cloned successfully, initialize it.
             self.link("initialize", { data: { editDir: EDIT_DIRECTORY } }, function (err, files) {
                 processResponse(err, function () {
-                    createFileList(files); 
+                    createFileList(files);
                     handlers(self);
-
-                    var editor = ace.edit("editor");
-                    editor.setTheme("ace/theme/monokai");
-                    editor.getSession().setMode("ace/mode/javascript");
-
-                    loading.stop();
                 });
             });
         });
@@ -64,15 +55,22 @@ module.exports = function (config) {
 };
 
 function createFileList(files) {
-    var template = $(".files-container").find(".template");
+    var template = $("#file-manager").find(".template");
 
     for (var i in files) {
-        
-        var item = template.clone().removeClass("template").addClass("appItem");
+
+        var extension = files[i].substring(files[i].lastIndexOf(".") + 1);
+
+        var item = template.clone()
+                        .removeClass("template")
+                        .addClass("appItem")
+                        .addClass("file")
+                        .addClass("ext-" + extension);
+
         item.attr("data-file", files[i]);
         item.find("a").text(files[i]);
 
-        $(".template").after(item);
+        template.after(item);
     }
 }
 
@@ -82,7 +80,7 @@ function handlers(self) {
     $(document).on("click", ".appItem", function () {
         $(".appItem").removeClass("active");
         $(this).addClass("active");
-        
+
         FILE_NAME = $(this).attr("data-file");
 
         var dataObject = {
@@ -92,14 +90,14 @@ function handlers(self) {
 
         self.link("openFile", { data: dataObject },  function (err, content) {
             if (err) { return alert(err); }
-    
+
             if (typeof content === "object") {
                 content = JSON.stringify(content, null, 4);
             }
 
             var extension = FILE_NAME.substring(FILE_NAME.lastIndexOf(".") + 1);
 
-            editor.getSession().setMode(MODES[extension] || "ace/mode/" + extension);
+            editor.getSession().setMode("ace/mode/" + extension);
             editor.setValue(content);
             editor.scrollToLine(1, false, true);
             editor.gotoLine(0, 0, false);
@@ -110,7 +108,7 @@ function handlers(self) {
     });
 
     $(document).on("click", ".btn-danger", function () {
-        
+
         var dataToSend = {
             editDir: EDIT_DIRECTORY,
             fileName: FILE_NAME,
@@ -122,3 +120,5 @@ function handlers(self) {
         });
     });
 }
+
+return module; });

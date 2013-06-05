@@ -1,7 +1,7 @@
 var fs = require("fs");
 var Dir = require("./directory");
 
-/* 
+/*
  *  Operation that clones the application
  *  The mongo id has to be passed in link.data
  */
@@ -10,13 +10,13 @@ exports.cloneApplication = function (link) {
     var givenId = link.data;
 
     if (!givenId) { link.send(400, "Missing mongo id."); }
-    
+
     /////////////////////////////////
     // Search in database for givenId
     /////////////////////////////////
     M.datasource.resolve(link.params.ds, function(err, ds) {
         if (err) { return callback(err); }
-        
+
         M.database.open(ds, function(err, db) {
             if (err) { return callback(err); }
 
@@ -41,11 +41,11 @@ exports.cloneApplication = function (link) {
 
                     if (err) { return link.send(400, err); }
                     if (!doc) { return link.send(400, "Provided an invalid id. Please provide a Mongo id or an application id."); }
-                    
+
                     // The logged user musts to have permissions to edit the application
                     // TODO Implement collaborator mode
                     if (doc.ownerUserName !== link.session.login) {
-                        err = "You must have permissions to edit this files. You are logged as " + 
+                        err = "You must have permissions to edit this files. You are logged as " +
                               link.session.login + " instead of " + doc.owner;
                         return link.send(400, err);
                     }
@@ -61,15 +61,17 @@ exports.cloneApplication = function (link) {
                     } catch (e) {
                         return link.send(400, { "message": "Invalid application descriptor."});
                     }
-                
+
                     var editDir = dirName + "/" + json.appId;
-                    var appId = json.appId;                    
-               
+                    var appId = json.appId;
+
                     var response = {
                         message: "",
                         editDir: editDir,
                         path: path,
-                        appId: appId
+                        appId: appId,
+                        // TODO Prevent the sending of full data.
+                        doc: doc
                     };
 
                     var auth = link.session.auth;
@@ -83,7 +85,7 @@ exports.cloneApplication = function (link) {
 
                     M.fs.makeDirectory(dirName, function(e){
                         M.repo.cloneToDir(doc.repo_url, dirName, json.appId, cloneOptions, function (err) {
-                            if (err && err.code === "API_REPO_CLONE_DESTINATION_ALREADY_EXISTS") { 
+                            if (err && err.code === "API_REPO_CLONE_DESTINATION_ALREADY_EXISTS") {
                                 response.message = "Already cloned this app. Preparing to edit <strong>" + doc.name + "</strong>";
                                 return link.send(200, response);
                             }
@@ -129,11 +131,11 @@ exports.initialize = function (link) {
  *  Save file
  */
 exports.saveFile = function (link) {
-    
+
     var data = link.data;
 
-    if (!data || !data.editDir || !data.content || !data.fileName) { 
-        return link.send(400, "Missing data."); 
+    if (!data || !data.editDir || !data.content || !data.fileName) {
+        return link.send(400, "Missing data.");
     }
 
     var filePath = link.data.editDir + link.data.fileName;
