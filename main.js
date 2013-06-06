@@ -19,6 +19,10 @@ var APP_ID;
 //      The multiple file edits will be possible.
 var FILE_NAME;
 
+var modes = {
+    "js": "javascript"
+};
+
 module.exports = function (config) {
 
     var self = this;
@@ -147,7 +151,9 @@ function handlers(self) {
 
             var extension = FILE_NAME.substring(FILE_NAME.lastIndexOf(".") + 1);
 
-            editor.getSession().setMode("ace/mode/" + extension);
+            var mode = modes[extension] || extension;
+
+            editor.getSession().setMode("ace/mode/" + mode);
             editor.setValue(content);
             editor.scrollToLine(1, false, true);
             editor.gotoLine(0, 0, false);
