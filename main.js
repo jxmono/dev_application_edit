@@ -1,4 +1,3 @@
-M.wrap('github/IonicaBizau/dev_application_edit/dev/main.js', function (require, module, exports) {
 var loading = {
     "start": function (message) {
         var loading = $(".loading");
@@ -47,6 +46,9 @@ module.exports = function (config) {
             self.link("initialize", { data: { editDir: EDIT_DIRECTORY } }, function (err, files) {
                 processResponse(err, function () {
                     createFileList(files);
+                    var editor = ace.edit("editor");
+                    editor.setTheme("ace/theme/monokai");
+                    loading.stop();
                     handlers(self);
                 });
             });
@@ -63,12 +65,12 @@ function createFileList(files) {
 
         var item = template.clone()
                         .removeClass("template")
-                        .addClass("appItem")
-                        .addClass("file")
-                        .addClass("ext-" + extension);
+                        .addClass("appItem");
+        item.find("a").addClass("file")
+                      .addClass("ext-" + extension)
+                      .text(files[i]);
 
         item.attr("data-file", files[i]);
-        item.find("a").text(files[i]);
 
         template.after(item);
     }
@@ -120,5 +122,3 @@ function handlers(self) {
         });
     });
 }
-
-return module; });
