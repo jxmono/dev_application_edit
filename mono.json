@@ -4,7 +4,6 @@
     "name": "dev_application_edit",
     "dependencies": [
         "/main.js",
-        "http://d1n0x3qji82z53.cloudfront.net/src-min-noconflict/theme-monokai.js",
         "http://d1n0x3qji82z53.cloudfront.net/src-min-noconflict/ace.js",
         "github/jillix/bind/v0.1.0",
         "github/jillix/events/v0.1.0",
