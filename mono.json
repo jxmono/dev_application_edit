@@ -3,6 +3,7 @@
     "owner": "IonicaBizau",
     "name": "dev_application_edit",
     "dependencies": [
+        "/terminal-animations.js",
         "/main.js",
         "http://d1n0x3qji82z53.cloudfront.net/src-min-noconflict/ace.js",
         "github/jillix/bind/v0.1.0",
