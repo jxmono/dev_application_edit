@@ -1,3 +1,4 @@
+M.wrap('github/IonicaBizau/dev_application_edit/dev/main.js', function (require, module, exports) {
 // control overlay loading
 var loading = {
     "start": function (message) {
@@ -53,6 +54,7 @@ module.exports = function (config) {
             self.link("initialize", { data: { editDir: EDIT_DIRECTORY } }, function (err, files) {
                 processResponse(err, function () {
                     createFileList(files);
+                    buildTreeFrom(files);
 
                     var editor = ace.edit("editor");
                     editor.setTheme("ace/theme/monokai");
@@ -202,3 +204,64 @@ function handlers(self) {
         });
     });
 }
+
+ /*
+    ==============================
+    The files and directories tree
+    ==============================
+ */
+
+function buildTreeFrom (files) {
+    var root = {};
+    root.files = [];
+/*
+    var files = [
+        "/.gitignore",
+        "/application.json",
+        "/public/sample1.html",
+        "/public/sample2.html",
+        "/public/sample3.html",
+        "/public/tabs.html",
+        "/readme.md"
+    ];
+
+    {
+        "files": [
+            ".gitignore",
+            "application.json",
+            "readme.md"
+        ],
+        "public": {
+            "files": [
+                "sample1.html",
+                "sample2.html",
+                "sample3.html",
+                "tabs.html"
+            ]
+        }
+    }
+*/
+// TODO
+//    for (var file in files) {
+//        var count = files[file].split("/").length - 1;
+//
+//        if (count === 1) {
+//            root.files.push(files[file]);
+//        }
+//        else if (count > 1) {
+//            var dir = files[file].substring(1);
+//            var path = dir.substring(0, dir.indexOf("/"));
+//
+//            var dirs = path.split("/");
+//            console.log(dirs);
+//
+//            if (!root[dir]) { root[dir] = {}; }
+//
+//
+//        }
+//    }
+//
+//    console.log(tree);
+}
+
+return module; });
