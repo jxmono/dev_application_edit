@@ -1,4 +1,3 @@
-M.wrap('github/IonicaBizau/dev_application_edit/dev/main.js', function (require, module, exports) {
 // control overlay loading
 var loading = {
     "start": function (message) {
@@ -263,5 +262,3 @@ function buildTreeFrom (files) {
 //
 //    console.log(tree);
 }
-
-return module; });
