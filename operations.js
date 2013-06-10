@@ -112,18 +112,35 @@ exports.initialize = function (link) {
 
     var editDir = link.data.editDir;
 
-    Dir.read(editDir, function (err, files) {
+    var filesToSend = [];
+
+    fs.readdir(editDir, function (err, files) {
         if (err) { return link.send(400, err); }
 
-        var filesToSend = [];
-
         for (var i in files) {
-            if (files[i].indexOf("/.git/") === -1) {
-                filesToSend.push(files[i].replace(editDir, ""));
+            if (files[i] === ".git") {
+                files.splice(i, 1);
             }
         }
 
-        link.send(200, filesToSend);
+        for (var i in files) {
+            (function (file) {
+                fs.stat(editDir + "/" + file, function (err, stats) {
+                    if (err) { return link.send(400, err); }
+
+                    if (stats.isDirectory()) {
+                        file = file + "/";
+                    }
+
+                    filesToSend.push(file);
+
+                    if (filesToSend.length === files.length) {
+                        console.log(filesToSend);
+                        link.send(200, filesToSend);
+                    }
+                });
+            })(files[i]);
+        }
     });
 };
 
@@ -156,6 +173,7 @@ exports.openFile = function (link) {
 
     fs.readFile(fileToEdit, function (err, data) {
         if (err) { return link.send(400, err); }
+
         link.send(200, data.toString());
     });
 };

@@ -23,6 +23,8 @@ var modes = {
     "js": "javascript"
 };
 
+var Tree = require("github/IonicaBizau/bind-tree")();
+
 module.exports = function (config) {
 
     var self = this;
@@ -52,8 +54,12 @@ module.exports = function (config) {
             // application cloned successfully, initialize it.
             self.link("initialize", { data: { editDir: EDIT_DIRECTORY } }, function (err, files) {
                 processResponse(err, function () {
-                    createFileList(files);
-                    buildTreeFrom(files);
+
+                    var options = {
+                        "container": ".file-list"
+                    };
+
+                    Tree.buildFrom(files, options);
 
                     var editor = ace.edit("editor");
                     editor.setTheme("ace/theme/monokai");
@@ -66,25 +72,6 @@ module.exports = function (config) {
     });
 };
 
-function createFileList(files) {
-    var template = $(".file-manager").find(".template");
-
-    for (var i in files) {
-
-        var extension = files[i].substring(files[i].lastIndexOf(".") + 1);
-
-        var item = template.clone()
-                        .removeClass("template")
-                        .addClass("appItem");
-        item.find("a").addClass("file")
-                      .addClass("ext-" + extension)
-                      .text(files[i]);
-
-        item.attr("data-file", files[i]);
-
-        template.after(item);
-    }
-}
 
 function handlers(self) {
 
@@ -107,12 +94,12 @@ function handlers(self) {
      *  OPEN FILE OPERATION *
      ***********************/
     // return false on click on a file name
-    $(document).on("click", ".appItem", function () {
+    $(document).on("click", ".file", function () {
         return false;
     });
 
     // double click -> open a file
-    $(document).on("dblclick", ".appItem", function () {
+    $(document).on("dblclick", ".file", function () {
 
         var clickedAppItem = $(this).find("a");
         clickedAppItem.addClass("loading");
@@ -202,63 +189,4 @@ function handlers(self) {
             toastItemImage.addClass("toast-item-image-success");
         });
     });
-}
-
- /*
-    ==============================
-    The files and directories tree
-    ==============================
- */
-
-function buildTreeFrom (files) {
-    var root = {};
-    root.files = [];
-/*
-    var files = [
-        "/.gitignore",
-        "/application.json",
-        "/public/sample1.html",
-        "/public/sample2.html",
-        "/public/sample3.html",
-        "/public/tabs.html",
-        "/readme.md"
-    ];
-
-    {
-        "files": [
-            ".gitignore",
-            "application.json",
-            "readme.md"
-        ],
-        "public": {
-            "files": [
-                "sample1.html",
-                "sample2.html",
-                "sample3.html",
-                "tabs.html"
-            ]
-        }
-    }
-*/
-// TODO
-//    for (var file in files) {
-//        var count = files[file].split("/").length - 1;
-//
-//        if (count === 1) {
-//            root.files.push(files[file]);
-//        }
-//        else if (count > 1) {
-//            var dir = files[file].substring(1);
-//            var path = dir.substring(0, dir.indexOf("/"));
-//
-//            var dirs = path.split("/");
-//            console.log(dirs);
-//
-//            if (!root[dir]) { root[dir] = {}; }
-//
-//
-//        }
-//    }
-//
-//    console.log(tree);
 }
