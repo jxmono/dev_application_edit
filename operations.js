@@ -135,7 +135,6 @@ exports.initialize = function (link) {
                     filesToSend.push(file);
 
                     if (filesToSend.length === files.length) {
-                        console.log(filesToSend);
                         link.send(200, filesToSend);
                     }
                 });
