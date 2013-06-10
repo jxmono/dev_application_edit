@@ -1,3 +1,4 @@
+M.wrap('github/IonicaBizau/dev_application_edit/dev/terminal-animations.js', function (require, module, exports) {
 $(document).ready(function () {
 
     var TerminalContainer = $(".terminal-container");
@@ -45,3 +46,5 @@ $(document).ready(function () {
         });
     });
 });
+
+return module; });
