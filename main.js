@@ -23,7 +23,7 @@ var modes = {
     "js": "javascript"
 };
 
-var Tree = require("github/IonicaBizau/bind-tree")();
+var Tree = require("github/IonicaBizau/bind-tree");
 
 module.exports = function (config) {
 
