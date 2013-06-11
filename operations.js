@@ -1,5 +1,4 @@
 var fs = require("fs");
-var Dir = require("./directory");
 
 /*
  *  Operation that clones the application
@@ -160,6 +159,10 @@ exports.saveFile = function (link) {
         if (err) { return link.send(400, err); }
         link.send(200);
     });
+};
+
+exports.getChildren = function (link) {
+    link.send(200, []);
 };
 
 exports.openFile = function (link) {
