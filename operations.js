@@ -106,40 +106,8 @@ exports.cloneApplication = function (link) {
  *  in the edit directory
  */
 exports.initialize = function (link) {
-
-    if (!link.data || !link.data.editDir) { return link.send(400, "Missing data."); }
-
-    var editDir = link.data.editDir;
-
-    var filesToSend = [];
-
-    fs.readdir(editDir, function (err, files) {
-        if (err) { return link.send(400, err); }
-
-        for (var i in files) {
-            if (files[i] === ".git") {
-                files.splice(i, 1);
-            }
-        }
-
-        for (var i in files) {
-            (function (file) {
-                fs.stat(editDir + "/" + file, function (err, stats) {
-                    if (err) { return link.send(400, err); }
-
-                    if (stats.isDirectory()) {
-                        file = file + "/";
-                    }
-
-                    filesToSend.push(file);
-
-                    if (filesToSend.length === files.length) {
-                        link.send(200, filesToSend);
-                    }
-                });
-            })(files[i]);
-        }
-    });
+    // prevent removing this function, maybe we will need it later.
+    link.send(200);
 };
 
 /*
@@ -162,7 +130,43 @@ exports.saveFile = function (link) {
 };
 
 exports.getChildren = function (link) {
-    link.send(200, []);
+
+    if (!link.data) { return link.send(400, "Missing data."); }
+    if (!link.data.editDir) { return link.send(400, "Missing edit directory."); }
+    if (!link.data.pathToParent) { return link.send(400, "Missing the path to parent."); }
+
+    var editDir = link.data.editDir;
+    var path = link.data.pathToParent;
+
+    var filesToSend = [];
+
+    fs.readdir(editDir + path, function (err, files) {
+        if (err) { return link.send(400, err); }
+
+        for (var i in files) {
+            if (files[i] === ".git") {
+                files.splice(i, 1);
+            }
+        }
+
+        for (var i in files) {
+            (function (file) {
+                fs.stat(editDir + path + file, function (err, stats) {
+                    if (err) { return link.send(400, err); }
+
+                    if (stats.isDirectory()) {
+                        file = file + "/";
+                    }
+
+                    filesToSend.push(file);
+
+                    if (filesToSend.length === files.length) {
+                        link.send(200, filesToSend);
+                    }
+                });
+            })(files[i]);
+        }
+    });
 };
 
 exports.openFile = function (link) {

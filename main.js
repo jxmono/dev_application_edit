@@ -23,20 +23,23 @@ var modes = {
     "js": "javascript"
 };
 
-
 var Tree = require("github/IonicaBizau/bind-tree");
 // TODO Move to bind-tree module
 // ===========================================
 Tree.buildFrom = function (items, options) {
 
     var selector = options.selector;
+    if (typeof selector === "string") {
+        selector = $(selector);
+    }
+
     var howToAdd = options.howToAdd;
 
     // TODO 'data-file' attr configurable
     var dataFileOfParent = options.dataFileOfParent;
 
     // TODO Use jQuery to create elements
-    var tree = "";
+    var tree = "<ul>";
     var ul = '<ul style="overflow: hidden;">';
     li += ul;
 
@@ -51,7 +54,7 @@ Tree.buildFrom = function (items, options) {
             plusNone = "plus";
             type = "directory";
             name = name.replace("/", "");
-            dataFile = dataFileOfParent + items[i] + "/";
+            dataFile = dataFileOfParent + items[i];
         }
         else {
             plusNone = "none";
@@ -67,18 +70,60 @@ Tree.buildFrom = function (items, options) {
         tree += li;
     }
 
-    tree += '</li>';
+    tree += '</li></ul>';
 
-    $(selector)[howToAdd](tree);
+    switch (howToAdd) {
+        case "after":
+            selector.next().remove();
+            break;
+        case "before":
+            selector.prev().remove();
+            break;
+        case "html":
+            selector.html("");
+            break;
+    }
+
+    selector[howToAdd](tree);
 };
 
+/*
+ *  Adds .loading class to jQueryElement
+ */
 Tree.startLoading = function (jQueryElement) {
+    if (typeof jQueryElement === "string") { jQueryElement = $(jQueryElement); }
+
     jQueryElement.addClass("loading");
 };
 
 Tree.stopLoading = function (jQueryElement) {
+    if (typeof jQueryElement === "string") { jQueryElement = $(jQueryElement); }
+
     jQueryElement.removeClass("loading");
 };
+
+Tree.expand = function (clickedElement) {
+    if (typeof clickedElement === "string") { clickedElement = $(clickedElement); }
+
+    if (!clickedElement.next().next().length) { return; }
+
+    clickedElement.next().next().show();
+    clickedElement
+        .removeClass("plus")
+        .addClass("minus");
+};
+
+Tree.collapse = function (clickedElement) {
+    if (typeof clickedElement === "string") { clickedElement = $(clickedElement); }
+
+    if (!clickedElement.next().next().length) { return; }
+
+    clickedElement.next().next().hide();
+    clickedElement
+        .removeClass("minus")
+        .addClass("plus");
+};
+
 function getExtensionOf (file) {
     if (file.indexOf(".") === -1) { return undefined; }
 
@@ -97,40 +142,42 @@ module.exports = function (config) {
     var search = location.search;
     var mongoId = search.substring(9);
 
-    function processResponse (err, callback) {
-        if (err) {alert(err); return location = "/"; }
-        callback();
+    function alertAndRedirect () {
+        alert(err); return location = "/";
     }
 
     // clone application
     self.link("cloneApplication", { data: mongoId }, function (err, data) {
-       processResponse(err, function () {
-            loading.start(data.message);
+        if (err) { return alertAndRedirect(); }
 
-            EDIT_DIRECTORY = data.editDir;
-            EDIT_PATH = data.path;
-            APP_ID = data.appId;
+        loading.start(data.message);
 
-            $("#project-root").text(data.doc.name);
+        EDIT_DIRECTORY = data.editDir;
+        EDIT_PATH = data.path;
+        APP_ID = data.appId;
 
-            // application cloned successfully, initialize it.
-            self.link("initialize", { data: { editDir: EDIT_DIRECTORY } }, function (err, files) {
-                processResponse(err, function () {
+        $("#project-root").text(data.doc.name);
 
-                    var options = {
-                        "selector": ".file-list",
-                        "howToAdd": "html",
-                        "dataFileOfParent": "/"
-                    };
+        // application cloned successfully, initialize it.
+        self.link("initialize", function (err) {
+            if (err) { return alertAndRedirect(); }
 
-                    Tree.buildFrom(files, options);
+            self.link("getChildren", { data: { editDir: EDIT_DIRECTORY, pathToParent: "/" }}, function (err, files) {
+                if (err) { return alertAndRedirect(); }
 
-                    var editor = ace.edit("editor");
-                    editor.setTheme("ace/theme/monokai");
+                var options = {
+                    "selector": ".file-list",
+                    "howToAdd": "html",
+                    "dataFileOfParent": "/"
+                };
 
-                    loading.stop();
-                    handlers(self);
-                });
+                Tree.buildFrom(files, options);
+
+                var editor = ace.edit("editor");
+                editor.setTheme("ace/theme/monokai");
+
+                loading.stop();
+                handlers(self);
             });
         });
     });
@@ -254,13 +301,42 @@ function handlers(self) {
         });
     });
 
-    // open direcotyr
+    /***********************
+    *  OPEN DIRECTORY      *
+    ***********************/
+    // double clik on direcotyr
     $(document).on("dblclick", ".directory", function () {
-
-        var clickedItem = $(this);
-        Tree.startLoading(clickedItem);
-        self.link("getChildren", {}, function (err, children) {
-            Tree.stopLoading(clickedItem);
-        });
+        clickOnDirectory($(this));
     });
+
+    // click on expand
+    $(document).on("click", ".plus", function () {
+        Tree.expand($(this));
+        clickOnDirectory($(this).next());
+    });
+
+    // click on collapse
+    $(document).on("click", ".minus", function () {
+        Tree.collapse($(this));
+    });
+
+    // click on directory
+    function clickOnDirectory(clickedItem) {
+
+        var dataFile = clickedItem.attr("data-file");
+        Tree.startLoading(clickedItem);
+
+        self.link("getChildren", { data: { editDir: EDIT_DIRECTORY, pathToParent: dataFile }}, function (err, files) {
+            Tree.stopLoading(clickedItem);
+
+            var options = {
+                "selector": clickedItem,
+                "howToAdd": "after",
+                "dataFileOfParent": dataFile
+            };
+
+            Tree.buildFrom(files, options);
+            Tree.expand(clickedItem.prev());
+        });
+    }
 }
