@@ -23,7 +23,69 @@ var modes = {
     "js": "javascript"
 };
 
+
 var Tree = require("github/IonicaBizau/bind-tree");
+// TODO Move to bind-tree module
+// ===========================================
+Tree.buildFrom = function (items, options) {
+
+    var selector = options.selector;
+    var howToAdd = options.howToAdd;
+
+    // TODO 'data-file' attr configurable
+    var dataFileOfParent = options.dataFileOfParent;
+
+    // TODO Use jQuery to create elements
+    var tree = "";
+    var ul = '<ul style="overflow: hidden;">';
+    li += ul;
+
+    // items: folders or files
+    for (var i in items) {
+        var plusNone;
+        var li = '<li>';
+        var name = items[i];
+        var dataFile;
+
+        if (items[i].substr(-1) === "/") {
+            plusNone = "plus";
+            type = "directory";
+            name = name.replace("/", "");
+            dataFile = dataFileOfParent + items[i] + "/";
+        }
+        else {
+            plusNone = "none";
+            type = "file ext-" + getExtensionOf(items[i]);
+            dataFile = dataFileOfParent + items[i];
+        }
+
+        li += '<span class="' + plusNone + '"></span>' +
+              '<a data-file="' + dataFile + '"' +
+              ' class="' + type + '"> ' + name + '</a>' +
+              '</li>';
+
+        tree += li;
+    }
+
+    tree += '</li>';
+
+    $(selector)[howToAdd](tree);
+};
+
+Tree.startLoading = function (jQueryElement) {
+    jQueryElement.addClass("loading");
+};
+
+Tree.stopLoading = function (jQueryElement) {
+    jQueryElement.removeClass("loading");
+};
+function getExtensionOf (file) {
+    if (file.indexOf(".") === -1) { return undefined; }
+
+    return file.substring(file.lastIndexOf(".") + 1);
+}
+// =================== END OF TREE TODO
+
 
 module.exports = function (config) {
 
@@ -56,7 +118,9 @@ module.exports = function (config) {
                 processResponse(err, function () {
 
                     var options = {
-                        "container": ".file-list"
+                        "selector": ".file-list",
+                        "howToAdd": "html",
+                        "dataFileOfParent": "/"
                     };
 
                     Tree.buildFrom(files, options);
@@ -187,6 +251,16 @@ function handlers(self) {
 
             toastItem.find(".message").text("File saved.");
             toastItemImage.addClass("toast-item-image-success");
+        });
+    });
+
+    // open direcotyr
+    $(document).on("dblclick", ".directory", function () {
+
+        var clickedItem = $(this);
+        Tree.startLoading(clickedItem);
+        self.link("getChildren", {}, function (err, children) {
+            Tree.stopLoading(clickedItem);
         });
     });
 }
