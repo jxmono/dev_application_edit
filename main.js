@@ -142,13 +142,13 @@ module.exports = function (config) {
     var search = location.search;
     var mongoId = search.substring(9);
 
-    function alertAndRedirect () {
+    function alertAndRedirect (err) {
         alert(err); return location = "/";
     }
 
     // clone application
     self.link("cloneApplication", { data: mongoId }, function (err, data) {
-        if (err) { return alertAndRedirect(); }
+        if (err) { return alertAndRedirect(err); }
 
         loading.start(data.message);
 
@@ -163,7 +163,7 @@ module.exports = function (config) {
             if (err) { return alertAndRedirect(); }
 
             self.link("getChildren", { data: { editDir: EDIT_DIRECTORY, pathToParent: "/" }}, function (err, files) {
-                if (err) { return alertAndRedirect(); }
+                if (err) { return alertAndRedirect(err); }
 
                 var options = {
                     "selector": ".file-list",
