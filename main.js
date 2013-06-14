@@ -18,6 +18,7 @@ var APP_ID;
 // TODO Prevent to make it global.
 //      The multiple file edits will be possible.
 var FILE_NAME;
+var APP_TYPE;
 
 var modes = {
     "js": "javascript"
@@ -40,7 +41,7 @@ Tree.buildFrom = function (items, options) {
 
     // TODO Use jQuery to create elements
     var tree = "<ul>";
-    var ul = '<ul style="overflow: hidden;">';
+    var ul = '<ul style="overflow: auto;">';
     li += ul;
 
     // items: folders or files
@@ -136,19 +137,48 @@ module.exports = function (config) {
 
     var self = this;
 
-    loading.start("Cloning the application.");
 
     // first, scan the url
     var search = location.search;
-    var mongoId = search.substring(9);
+    var givenId = search.substring(9);
 
     function alertAndRedirect (err) {
         alert(err); return location = "/";
     }
 
-    // clone application
-    self.link("cloneApplication", { data: mongoId }, function (err, data) {
+    loading.start("Initializing...");
+    // application cloned successfully, initialize it.
+    self.link("initialize", { data: { givenId: givenId } }, function (err, data) {
         if (err) { return alertAndRedirect(err); }
+
+        $("#project-root").text(data.doc.name);
+        APP_TYPE = data.appType;
+
+        // open directory where the application was installed
+        if (data.appType === "installed") {
+            EDIT_DIRECTORY = data.editDir;
+            EDIT_PATH = data.path;
+            APP_ID = data.appId;
+
+            loading.start("Opening the project...");
+            initFileManager(self);
+        }
+        // clone application
+        else {
+            loading.start("Cloning the application.");
+            cloneApplication(self, givenId, function (err, data) {
+                if (err) { return alertAndRedirect(err); }
+
+                loading.start("Opening the project...");
+                initFileManager(self);
+            });
+        }
+    });
+};
+
+function cloneApplication (self, id, callback) {
+    self.link("cloneApplication", { data: id }, function (err, data) {
+        if (err) { return callback(err); }
 
         loading.start(data.message);
 
@@ -156,33 +186,36 @@ module.exports = function (config) {
         EDIT_PATH = data.path;
         APP_ID = data.appId;
 
-        $("#project-root").text(data.doc.name);
 
-        // application cloned successfully, initialize it.
-        self.link("initialize", function (err) {
-            if (err) { return alertAndRedirect(); }
-
-            self.link("getChildren", { data: { editDir: EDIT_DIRECTORY, pathToParent: "/" }}, function (err, files) {
-                if (err) { return alertAndRedirect(err); }
-
-                var options = {
-                    "selector": ".file-list",
-                    "howToAdd": "html",
-                    "dataFileOfParent": "/"
-                };
-
-                Tree.buildFrom(files, options);
-
-                var editor = ace.edit("editor");
-                editor.setTheme("ace/theme/monokai");
-
-                loading.stop();
-                handlers(self);
-            });
-        });
+        callback(data);
     });
-};
+}
 
+function initFileManager (self) {
+
+    var data = {
+        editDir: EDIT_DIRECTORY,
+        pathToParent: "/"
+    };
+
+    self.link("getChildren", { data: data}, function (err, files) {
+        if (err) { return alertAndRedirect(err); }
+
+        var options = {
+            "selector": ".file-list",
+            "howToAdd": "html",
+            "dataFileOfParent": "/"
+        };
+
+        Tree.buildFrom(files, options);
+
+        var editor = ace.edit("editor");
+        editor.setTheme("ace/theme/monokai");
+
+        loading.stop();
+        handlers(self);
+    });
+}
 
 function handlers(self) {
 
@@ -219,6 +252,7 @@ function handlers(self) {
 
         var dataObject = {
             appId: APP_ID,
+            appType: APP_TYPE,
             fileName: FILE_NAME
         };
 
@@ -270,6 +304,7 @@ function handlers(self) {
         var dataToSend = {
             editDir: EDIT_DIRECTORY,
             fileName: FILE_NAME,
+            appType: APP_TYPE,
             content: editor.getValue()
         };
 

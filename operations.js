@@ -2,8 +2,13 @@ var fs = require("fs");
 
 /*
  *  Operation that clones the application
- *  The mongo id has to be passed in link.data
- */
+ *
+ *  Required data keys:
+ *   - givenId: can be a mongo id or an application id
+ *
+ *  WARNING: If you pass an application id the application
+ *           has to be imported in the database
+ * */
 exports.cloneApplication = function (link) {
 
     var givenId = link.data;
@@ -104,36 +109,110 @@ exports.cloneApplication = function (link) {
 /*
  *  Initialize operation: after the application is cloned
  *  in the edit directory
- */
+ *
+ *  Required data keys:
+ *   - givenId
+ * */
 exports.initialize = function (link) {
-    // prevent removing this function, maybe we will need it later.
-    link.send(200);
+
+    if (!link.data) { return link.send(400, "Missing data."); }
+    if (!link.data.givenId) { return link.send(400, "Missing given id."); }
+
+    var dirToSearch = M.config.APPLICATION_ROOT + link.data.givenId;
+
+    // search for the application installed
+    fs.readdir(dirToSearch, function (err) {
+
+        // TODO Check if there isn't another error
+
+        // if the folder doesn't exist, application is not installed
+        if (err) { return link.send(200, {"appType": "notInstalled"}); }
+
+        var descriptor = require(dirToSearch + "/" + M.config.APPLICATION_DESCRIPTOR_NAME);
+
+        var response = {
+            editDir: dirToSearch,
+            path: "/",
+            appId: link.data.givenId,
+            appType: "installed",
+            doc: descriptor
+        };
+
+        link.send(200, response);
+    });
 };
 
 /*
- *  Save file
- */
+ *  Saves a file to disk
+ *
+ *  Required data keys:
+ *   - editDir
+ *   - content
+ *   - fileName
+ *   - appType
+ *
+ * */
 exports.saveFile = function (link) {
 
     var data = link.data;
 
-    if (!data || !data.editDir || !data.content || !data.fileName) {
+    if (!data) {
         return link.send(400, "Missing data.");
     }
 
-    var filePath = link.data.editDir + link.data.fileName;
+    var requiredKeys = [
+        "editDir",
+        "content",
+        "fileName",
+        "appType"
+    ];
+
+    for (var key in requiredKeys) {
+        if (!data[requiredKeys[key]]) {
+            return link.send(400, "Missing " + key + ".");
+        }
+    }
+
+    var filePath;
+
+    if (link.data.appType !== "installed") {
+        filePath = link.data.editDir + link.data.fileName;
+    }
+    else {
+        fileToEdit = M.config.APPLICATION_ROOT + link.data.appId + "/" + link.data.fileName;
+    }
 
     fs.writeFile(filePath, link.data.content, function (err) {
         if (err) { return link.send(400, err); }
+
         link.send(200);
     });
 };
 
+/*
+ *  Reads the directory and returns the array
+ *  with the file names and directory names like
+ *  in the following example:
+ *  [
+ *      "/file1",
+ *      "/file2",
+ *      "/dir1/",
+ *      "/file3",
+ *      "/dir2/"
+ *  ]
+ *
+ *  Required data keys:
+ *   - editDir
+ *   - pathToParent
+ *   - appType
+ *
+ * */
 exports.getChildren = function (link) {
 
     if (!link.data) { return link.send(400, "Missing data."); }
     if (!link.data.editDir) { return link.send(400, "Missing edit directory."); }
     if (!link.data.pathToParent) { return link.send(400, "Missing the path to parent."); }
+    if (!link.data.appType) { return link.send(400, "Missing the application type."); }
 
     var editDir = link.data.editDir;
     var path = link.data.pathToParent;
@@ -169,13 +248,39 @@ exports.getChildren = function (link) {
     });
 };
 
+/*
+ *  Opens a file from disk
+ *
+ *  Required data keys:
+ *   - appId
+ *   - fileName
+ *   - appType
+ *
+ * */
 exports.openFile = function (link) {
 
-    if (!link.data || !link.data.appId || !link.data.fileName) {
-        return link.send(400, "Missing data.");
+    if (!link.data) { return link.send(400, "Missing data."); }
+
+    var requiredKeys = [
+        "appId",
+        "fileName",
+        "appType"
+    ];
+
+    for (var key in requiredKeys) {
+        if (!link.data[requiredKeys[key]]) {
+            return link.send(400, "Missing " + key + ".");
+        }
     }
 
-    var fileToEdit = M.config.APPLICATION_ROOT + "00000000000000000000000000000002/edit/" + link.session.login + "/" + link.data.appId + link.data.fileName;
+    var fileToEdit;
+
+    if (link.data.appType !== "installed") {
+        fileToEdit = M.config.APPLICATION_ROOT + "00000000000000000000000000000002/edit/" + link.session.login + "/" + link.data.appId + link.data.fileName;
+    }
+    else {
+        fileToEdit = M.config.APPLICATION_ROOT + link.data.appId + "/" + link.data.fileName;
+    }
 
     fs.readFile(fileToEdit, function (err, data) {
         if (err) { return link.send(400, err); }
