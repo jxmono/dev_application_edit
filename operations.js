@@ -89,6 +89,7 @@ exports.cloneApplication = function (link) {
 
                     M.fs.makeDirectory(dirName, function(e){
                         M.repo.cloneToDir(doc.repo_url, dirName, json.appId, cloneOptions, function (err) {
+
                             if (err && err.code === "API_REPO_CLONE_DESTINATION_ALREADY_EXISTS") {
                                 response.message = "Already cloned this app. Preparing to edit <strong>" + doc.name + "</strong>";
                                 return link.send(200, response);
@@ -125,18 +126,19 @@ exports.initialize = function (link) {
 
         // TODO Check if there isn't another error
 
-        // if the folder doesn't exist, application is not installed
-        if (err) { return link.send(200, {"appType": "notInstalled"}); }
-
-        var descriptor = require(dirToSearch + "/" + M.config.APPLICATION_DESCRIPTOR_NAME);
-
         var response = {
-            editDir: dirToSearch,
             path: "/",
             appId: link.data.givenId,
-            appType: "installed",
-            doc: descriptor
+            appType: "notInstalled"
         };
+
+        // if the folder doesn't exist, application is not installed
+        if (err) { return link.send(200, response); }
+
+        var descriptor = require(dirToSearch + "/" + M.config.APPLICATION_DESCRIPTOR_NAME);
+        response.editDir = dirToSearch,
+        response.appType = "installed",
+        response.doc = descriptor;
 
         link.send(200, response);
     });
@@ -150,7 +152,7 @@ exports.initialize = function (link) {
  *   - content
  *   - fileName
  *   - appType
- *
+ *   - appId
  * */
 exports.saveFile = function (link) {
 
@@ -164,22 +166,23 @@ exports.saveFile = function (link) {
         "editDir",
         "content",
         "fileName",
-        "appType"
+        "appType",
+        "appId"
     ];
 
     for (var key in requiredKeys) {
         if (!data[requiredKeys[key]]) {
-            return link.send(400, "Missing " + key + ".");
+            return link.send(400, "Missing " + requiredKeys[key] + ".");
         }
     }
 
     var filePath;
 
-    if (link.data.appType !== "installed") {
-        filePath = link.data.editDir + link.data.fileName;
+    if (data.appType !== "installed") {
+        filePath = data.editDir + data.fileName;
     }
     else {
-        fileToEdit = M.config.APPLICATION_ROOT + link.data.appId + "/" + link.data.fileName;
+        filePath = M.config.APPLICATION_ROOT + data.appId + "/" + data.fileName;
     }
 
     fs.writeFile(filePath, link.data.content, function (err) {
@@ -269,7 +272,7 @@ exports.openFile = function (link) {
 
     for (var key in requiredKeys) {
         if (!link.data[requiredKeys[key]]) {
-            return link.send(400, "Missing " + key + ".");
+            return link.send(400, "Missing " + requiredKeys[key] + ".");
         }
     }
 

@@ -132,6 +132,11 @@ function getExtensionOf (file) {
 }
 // =================== END OF TREE TODO
 
+// if there is a critical error show it and redirect
+// the user on the first page
+function alertAndRedirect (err) {
+    alert(JSON.stringify(err)); return location = "/";
+}
 
 module.exports = function (config) {
 
@@ -142,16 +147,12 @@ module.exports = function (config) {
     var search = location.search;
     var givenId = search.substring(9);
 
-    function alertAndRedirect (err) {
-        alert(err); return location = "/";
-    }
 
     loading.start("Initializing...");
     // application cloned successfully, initialize it.
     self.link("initialize", { data: { givenId: givenId } }, function (err, data) {
         if (err) { return alertAndRedirect(err); }
 
-        $("#project-root").text(data.doc.name);
         APP_TYPE = data.appType;
 
         // open directory where the application was installed
@@ -160,6 +161,8 @@ module.exports = function (config) {
             EDIT_PATH = data.path;
             APP_ID = data.appId;
 
+            $("#project-root").text(data.doc.name);
+
             loading.start("Opening the project...");
             initFileManager(self);
         }
@@ -167,7 +170,8 @@ module.exports = function (config) {
         else {
             loading.start("Cloning the application.");
             cloneApplication(self, givenId, function (err, data) {
-                if (err) { return alertAndRedirect(err); }
+                // TODO Why it throws err "Already cloned ..."?
+                // if (err) { return alertAndRedirect(err); }
 
                 loading.start("Opening the project...");
                 initFileManager(self);
@@ -186,6 +190,7 @@ function cloneApplication (self, id, callback) {
         EDIT_PATH = data.path;
         APP_ID = data.appId;
 
+        $("#project-root").text(data.doc.name);
 
         callback(data);
     });
@@ -195,6 +200,7 @@ function initFileManager (self) {
 
     var data = {
         editDir: EDIT_DIRECTORY,
+        appType: APP_TYPE,
         pathToParent: "/"
     };
 
@@ -216,6 +222,10 @@ function initFileManager (self) {
         handlers(self);
     });
 }
+
+// =====================
+//  THE BASIC FUNCTIONS
+// =====================
 
 function handlers(self) {
 
@@ -305,6 +315,7 @@ function handlers(self) {
             editDir: EDIT_DIRECTORY,
             fileName: FILE_NAME,
             appType: APP_TYPE,
+            appId: APP_ID,
             content: editor.getValue()
         };
 
@@ -361,7 +372,7 @@ function handlers(self) {
         var dataFile = clickedItem.attr("data-file");
         Tree.startLoading(clickedItem);
 
-        self.link("getChildren", { data: { editDir: EDIT_DIRECTORY, pathToParent: dataFile }}, function (err, files) {
+        self.link("getChildren", { data: { editDir: EDIT_DIRECTORY, pathToParent: dataFile, appType: APP_TYPE }}, function (err, files) {
             Tree.stopLoading(clickedItem);
 
             var options = {
