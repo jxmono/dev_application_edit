@@ -6,7 +6,6 @@
         "/main.js",
         "/terminal-animations.js",
         "http://d1n0x3qji82z53.cloudfront.net/src-min-noconflict/ace.js",
-        "github/IonicaBizau/bind-tree/dev",
         "github/jillix/bind/v0.1.0",
         "github/jillix/events/v0.1.0",
         "http://code.jquery.com/jquery-1.9.1.js",

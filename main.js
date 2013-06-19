@@ -24,7 +24,10 @@ var modes = {
     "js": "javascript"
 };
 
-var Tree = require("github/IonicaBizau/bind-tree");
+// var Tree = require("github/IonicaBizau/bind-tree");
+
+var Tree = {};
+
 // TODO Move to bind-tree module
 // ===========================================
 Tree.buildFrom = function (items, options) {
