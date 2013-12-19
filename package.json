@@ -1,7 +1,13 @@
 {
-    "source": "github",
-    "owner": "IonicaBizau",
-    "name": "dev_application_edit",
+  "name": "dev_application_edit",
+  "version": "0.0.0",
+  "description": "Edit Mono applications",
+  "main": "main.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/IonicaBizau/dev_application_edit.git"
+  },
+  "mono": {
     "dependencies": [
         "/main.js",
         "/terminal-animations.js",
@@ -18,4 +24,15 @@
         { "file": "operations.js", "function": "getChildren" },
         { "file": "operations.js", "function": "saveFile"   }
     ]
+  },
+  "keywords": [
+    "edit",
+    "applications",
+    "mono"
+  ],
+  "author": "Ionică Bizău",
+  "bugs": {
+    "url": "https://github.com/IonicaBizau/dev_application_edit/issues"
+  },
+  "homepage": "https://github.com/IonicaBizau/dev_application_edit"
 }
